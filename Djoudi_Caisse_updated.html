@@ -1,0 +1,177 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#087f5b">
+<title>Djoudi Caisse</title>
+<style>
+:root{--green:#087f5b;--dark:#07543f;--bg:#f2f7f4;--card:#fff;--text:#17251f;--muted:#68766f;--red:#c0392b}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);font-family:Arial,Tahoma,sans-serif;color:var(--text)}
+header{background:linear-gradient(135deg,var(--green),var(--dark));color:#fff;padding:20px 16px 24px;border-radius:0 0 22px 22px}
+header h1{margin:0;font-size:23px}header p{margin:6px 0 0;opacity:.9;font-size:13px}
+main{max-width:680px;margin:auto;padding:14px}
+.card{background:var(--card);border-radius:16px;padding:15px;margin:0 0 13px;box-shadow:0 3px 14px #1231}
+h2{font-size:17px;margin:0 0 12px}
+.row{display:flex;gap:9px}.row>*{flex:1;min-width:0}
+label{display:block;font-size:13px;color:var(--muted);margin:9px 0 5px}
+input{width:100%;border:1px solid #d8e3dc;border-radius:10px;padding:12px;font-size:16px;background:#fff;color:var(--text)}
+button{border:0;border-radius:11px;padding:12px 14px;font-size:15px;font-weight:700;cursor:pointer}
+.primary{background:var(--green);color:white}.secondary{background:#e3f2eb;color:var(--dark)}.danger{background:#fdecea;color:var(--red)}.full{width:100%;margin-top:10px}
+.scanbtn{width:100%;margin-top:10px}
+#video{width:100%;border-radius:12px;background:#111;display:none;margin-top:10px;max-height:260px;object-fit:cover}
+.hint{font-size:12px;color:var(--muted);line-height:1.6;margin:8px 0 0}
+.item{display:flex;justify-content:space-between;gap:10px;padding:11px 0;border-bottom:1px solid #edf1ee;align-items:center}
+.item:last-child{border-bottom:0}.item strong{display:block}.item small{color:var(--muted)}
+.item .actions{display:flex;gap:5px;align-items:center}.item button{padding:8px 10px}
+.total{font-size:22px;font-weight:800;color:var(--dark);text-align:center;padding:12px;background:#e7f5ed;border-radius:12px;margin-top:10px}
+.empty{color:var(--muted);text-align:center;padding:18px 5px;font-size:14px}\n.sale-record{padding:12px 0;border-bottom:1px solid #edf1ee}.sale-record:last-child{border-bottom:0}.sale-head{display:flex;justify-content:space-between;gap:8px;font-weight:700}.sale-record small{display:block;color:var(--muted);line-height:1.7;margin-top:5px}
+.tabs{display:flex;gap:8px;margin-bottom:12px}.tabs button{flex:1}
+.hidden{display:none!important}
+footer{text-align:center;color:var(--muted);font-size:11px;padding:8px 0 22px}
+</style>
+</head>
+<body>
+<header><h1>Djoudi Caisse</h1><p>قارئ الباركود وحساب المشتريات — يعمل محلياً على هاتفك</p></header>
+<main>
+  <div class="tabs">
+    <button class="primary" id="tabSale" onclick="showTab('sale')">الكاشير</button>
+    <button class="secondary" id="tabProducts" onclick="showTab('products')">السلع المحفوظة</button>
+  </div>
+
+  <section id="sale">
+    <div class="card">
+      <h2>إضافة سلعة إلى الفاتورة</h2>
+      <label for="barcode">رقم الباركود</label>
+      <input id="barcode" inputmode="numeric" placeholder="امسح الباركود أو اكتبه يدوياً">
+      <button class="secondary scanbtn" onclick="startScan()">📷 فتح الكاميرا لمسح الباركود</button>
+      <video id="video" playsinline></video>
+      <p class="hint" id="scanHint">إذا لم تعمل قراءة الباركود في متصفحك، يمكنك إدخال رقمه يدوياً أو استخدام قارئ باركود خارجي.</p>
+      <div class="row">
+        <div><label for="name">اسم السلعة</label><input id="name" placeholder="مثلاً: ماء"></div>
+        <div><label for="price">السعر (دج)</label><input id="price" type="number" min="0" step="0.01" inputmode="decimal" placeholder="0"></div>
+      </div>
+      <div class="row">
+        <div><label for="qty">الكمية</label><input id="qty" type="number" min="1" step="1" value="1" inputmode="numeric"></div>
+        <div style="display:flex;align-items:end"><button class="primary full" onclick="addItem()">إضافة للقائمة</button></div>
+      </div>
+      <p class="hint">عند مسح باركود محفوظ، سيظهر اسم السلعة وسعرها تلقائياً.</p>
+    </div>
+    <div class="card">
+      <h2>قائمة المشتريات</h2>
+      <div id="cart"><div class="empty">لم تضف أي سلعة بعد.</div></div>
+      <div class="total">المجموع: <span id="total">0</span> دج</div>
+      <div class="row">
+        <button class="secondary full" onclick="clearCart()">مسح القائمة</button>
+        <button class="danger full" onclick="finishSale()">إنهاء الفاتورة</button>
+      </div>
+    </div>
+    <div class="card">
+      <h2>مبيعات اليوم</h2>
+      <div class="total">إجمالي المبيعات: <span id="salesTotal">0</span> دج</div>
+      <p class="hint" id="salesCount">0 فاتورة محفوظة اليوم</p>
+      <div id="salesList"><div class="empty">لا توجد مبيعات مسجلة اليوم.</div></div>
+      <button class="danger full" onclick="clearTodaySales()">مسح مبيعات اليوم</button>
+      <p class="hint">تُحفظ المبيعات تلقائياً على هذا الهاتف حتى بعد الخروج من الموقع وإعادة فتحه. يبدأ سجل جديد تلقائياً في اليوم التالي.</p>
+    </div>
+  </section>
+
+  <section id="products" class="hidden">
+    <div class="card">
+      <h2>السلع المحفوظة على الهاتف</h2>
+      <p class="hint">تُحفظ السلع والأسعار في هذا الهاتف حتى بعد إغلاق التطبيق. لا تُحذف إلا إذا مسحت بيانات المتصفح أو حذفت التطبيق/بياناته.</p>
+      <div id="productList"><div class="empty">لا توجد سلع محفوظة بعد.</div></div>
+    </div>
+  </section>
+  <footer>Djoudi Caisse • تخزين محلي على الجهاز • لا يحتاج إلى حساب</footer>
+</main>
+<script>
+const $ = id => document.getElementById(id);
+let products = JSON.parse(localStorage.getItem('djoudi_products') || '{}');
+let cart = [];
+let stream = null;
+function saveProducts(){localStorage.setItem('djoudi_products',JSON.stringify(products));renderProducts()}
+function showTab(tab){
+  $('sale').classList.toggle('hidden',tab!=='sale');$('products').classList.toggle('hidden',tab!=='products');
+  $('tabSale').className=tab==='sale'?'primary':'secondary';$('tabProducts').className=tab==='products'?'primary':'secondary';
+  if(tab==='products')renderProducts();
+}
+function fillFromBarcode(){
+  const code=$('barcode').value.trim(); if(!code)return;
+  const p=products[code];
+  if(p){$('name').value=p.name;$('price').value=p.price;$('scanHint').textContent='تم العثور على السلعة المحفوظة.'}
+  else {$('name').value='';$('price').value='';$('scanHint').textContent='باركود جديد: أدخل اسم السلعة وسعرها ثم أضفها.';$('name').focus()}
+}
+$('barcode').addEventListener('change',fillFromBarcode);
+$('barcode').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();fillFromBarcode()}});
+async function startScan(){
+  if(!('BarcodeDetector' in window)){alert('المتصفح لا يدعم قارئ الباركود المدمج. جرّب Chrome حديثاً، أو أدخل الرقم يدوياً/استخدم قارئاً خارجياً.');return}
+  try{
+    const detector=new BarcodeDetector({formats:['ean_13','ean_8','upc_a','upc_e','code_128','code_39','qr_code']});
+    stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'}},audio:false});
+    $('video').srcObject=stream;$('video').style.display='block';await $('video').play();
+    $('scanHint').textContent='وجّه الكاميرا نحو الباركود...';
+    const scan=async()=>{if(!stream)return;try{const codes=await detector.detect($('video'));if(codes.length){$('barcode').value=codes[0].rawValue;stopScan();fillFromBarcode();return}}catch(e){}requestAnimationFrame(scan)};
+    requestAnimationFrame(scan);
+  }catch(e){alert('تعذّر فتح الكاميرا. اسمح للمتصفح باستخدام الكاميرا وتأكد من فتح الصفحة عبر اتصال آمن أو من ملف محلي مدعوم.');stopScan()}
+}
+function stopScan(){if(stream){stream.getTracks().forEach(t=>t.stop());stream=null}$('video').pause();$('video').srcObject=null;$('video').style.display='none'}
+function addItem(){
+  const code=$('barcode').value.trim(),name=$('name').value.trim(),price=Number($('price').value),qty=Math.floor(Number($('qty').value));
+  if(!code||!name||!Number.isFinite(price)||price<0||!Number.isInteger(qty)||qty<1){alert('أدخل الباركود واسم السلعة وسعراً صحيحاً وكمية لا تقل عن 1.');return}
+  products[code]={name,price};saveProducts();
+  const found=cart.find(x=>x.code===code);
+  if(found)found.qty+=qty;else cart.push({code,name,price,qty});
+  renderCart();$('barcode').value='';$('name').value='';$('price').value='';$('qty').value=1;$('scanHint').textContent='تم حفظ السلعة. امسح السلعة التالية.';$('barcode').focus();
+}
+function renderCart(){
+  const el=$('cart');if(!cart.length){el.innerHTML='<div class="empty">لم تضف أي سلعة بعد.</div>'}
+  else{el.innerHTML=cart.map((x,i)=>`<div class="item"><div><strong>${esc(x.name)}</strong><small>${esc(x.code)} • ${x.price} دج × ${x.qty}</small></div><div class="actions"><b>${(x.price*x.qty).toLocaleString('fr-FR')}</b><button class="secondary" onclick="changeQty(${i},-1)">−</button><button class="secondary" onclick="changeQty(${i},1)">+</button><button class="danger" onclick="removeItem(${i})">×</button></div></div>`).join('')}
+  $('total').textContent=cart.reduce((s,x)=>s+x.price*x.qty,0).toLocaleString('fr-FR');
+}
+function changeQty(i,d){cart[i].qty+=d;if(cart[i].qty<1)cart.splice(i,1);renderCart()}
+function removeItem(i){cart.splice(i,1);renderCart()}
+function clearCart(){if(!cart.length)return;if(confirm('هل تريد مسح قائمة المشتريات؟')){cart=[];renderCart()}}
+function localDateKey(){const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')}
+let dailySales=JSON.parse(localStorage.getItem('djoudi_sales_today')||'{"date":"","invoices":[]}');
+function saveDailySales(){localStorage.setItem('djoudi_sales_today',JSON.stringify(dailySales));renderSales()}
+function ensureSalesDate(){const today=localDateKey();if(dailySales.date!==today){dailySales={date:today,invoices:[]};saveDailySales()}}
+function finishSale(){
+  if(!cart.length){alert('القائمة فارغة.');return}
+  ensureSalesDate();
+  const items=cart.map(x=>({code:x.code,name:x.name,price:x.price,qty:x.qty}));
+  const sum=items.reduce((s,x)=>s+x.price*x.qty,0);
+  dailySales.invoices.push({id:Date.now(),time:new Date().toLocaleTimeString('ar-DZ',{hour:'2-digit',minute:'2-digit'}),items,total:sum});
+  saveDailySales();
+  alert('تم حفظ الفاتورة ضمن مبيعات اليوم.\\nالمجموع: '+sum.toLocaleString('fr-FR')+' دج');
+  cart=[];renderCart();
+}
+function renderSales(){
+  const list=$('salesList');
+  const invoices=dailySales.invoices||[];
+  const total=invoices.reduce((s,x)=>s+Number(x.total||0),0);
+  $('salesTotal').textContent=total.toLocaleString('fr-FR');
+  $('salesCount').textContent=invoices.length+' فاتورة محفوظة اليوم';
+  if(!invoices.length){list.innerHTML='<div class="empty">لا توجد مبيعات مسجلة اليوم.</div>';return}
+  list.innerHTML=invoices.slice().reverse().map((sale,index)=>{
+    const details=sale.items.map(x=>esc(x.name)+' × '+x.qty).join('، ');
+    return '<div class="sale-record"><div class="sale-head"><span>فاتورة '+(invoices.length-index)+'</span><span>'+Number(sale.total).toLocaleString('fr-FR')+' دج</span></div><small>'+esc(sale.time||'')+'<br>'+details+'</small></div>';
+  }).join('');
+}
+function clearTodaySales(){
+  if(!dailySales.invoices.length)return;
+  if(confirm('هل تريد مسح جميع مبيعات اليوم؟ لا يمكن التراجع عن ذلك.')){
+    dailySales={date:localDateKey(),invoices:[]};saveDailySales();
+  }
+}
+function renderProducts(){
+  const el=$('productList'),keys=Object.keys(products);
+  if(!keys.length){el.innerHTML='<div class="empty">لا توجد سلع محفوظة بعد.</div>';return}
+  el.innerHTML=keys.map(k=>`<div class="item"><div><strong>${esc(products[k].name)}</strong><small>${esc(k)} • ${products[k].price} دج</small></div><div class="actions"><button class="secondary" onclick="editProduct('${encodeURIComponent(k)}')">تعديل</button><button class="danger" onclick="deleteProduct('${encodeURIComponent(k)}')">حذف</button></div></div>`).join('');
+}
+function editProduct(k){k=decodeURIComponent(k);const p=products[k];const n=prompt('اسم السلعة:',p.name);if(n===null)return;const v=prompt('السعر بالدينار:',p.price);if(v===null)return;const price=Number(v);if(!n.trim()||!Number.isFinite(price)||price<0){alert('الاسم أو السعر غير صحيح.');return}products[k]={name:n.trim(),price};saveProducts()}
+function deleteProduct(k){k=decodeURIComponent(k);if(confirm('حذف '+products[k].name+' من السلع المحفوظة؟')){delete products[k];saveProducts()}}
+function esc(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+ensureSalesDate();renderCart();renderProducts();renderSales();
+</script>
+</body></html>
